@@ -14,7 +14,7 @@ echo -e "\e[93m[Warning]: $* \e[0m"
 }
 function check_exit(){
 if [ $? -ne 0]; then
-err_echo "$1"
+err_echo "异常码：$1"
 exit 1
 fi
 }
