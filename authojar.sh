@@ -61,7 +61,7 @@ function backjar(){
 	if [  -f "$backup_dir/$1/${jarname}_$backup_date" ];then
 		info_echo `ls -l $backup_dir/$1/${jarname}_$backup_date`
 	else
-		err_echo "备份文件不存在 请检查！"
+		err_echo "备份目标文件不存在 请检查\$2Jar包名称是否正确！"
 	fi
 
 }
@@ -87,6 +87,12 @@ function read_LINE(){
 #		info_echo $path
 		info_echo $line
 #		path=`echo ${line} |awk -F ${new_file} '{print $1}'`
+
+		if [ ! -f  /release/$jarfile/$line ];then
+			rm -rf /release/$jarname
+			err_echo "/release/jarfile目录下$new_file文件不存在 请检查readme内容和文件命名是否正确\n脚本退出，应用未做任何改变！"	
+
+		fi
 		if [ -d /release/$jarname/$path ];then
 			newname=`echo $new_file|awk -F "\r" '{print $1}'`
 			info_echo "更换新文件${newname}"
@@ -107,15 +113,18 @@ function read_LINE(){
 }
 
 function take_jar(){
-	source /etc/profile.d/java.sh
+	if [ -d /release/$jarname/logs ];then
+		rm -rf /release/$jarname/logs
+	fi
+	source /etc/profile
 	cd /release/$jarname
 	jar -cf $jarname ./*
 }
 function hood_jar(){
         #cp /release/$jarname/$jarname $jar_dir
-        cp /release/$jarname/$jarname /usr/local/tomcat7.0_${1}/webapps/${1}/WEB-INF/lib/
+        cp /release/$jarname/$jarname $tomcat_dir/webapps/${1}/WEB-INF/lib/
 	info_echo `ls -l $jar_dir/$jarname`
-	info_echo "风萧萧兮易水寒，壮士一去兮不复返。"
+	info_echo "Jar包替换完成。"
 
 }
 function Sup(){
@@ -134,7 +143,7 @@ function restart_app(){
 		info_echo "${1}应用以被杀死"
 		info_echo "开始启动${1}"
 		source /etc/profile.d/java.sh
-		/usr/local/tomcat7.0_${1}/bin/startup.sh > /dev/null
+		$tomcat_dir/bin/startup.sh > /dev/null
 	else
 		echo "检测到多个包含${1}字符串的进程 请手动重启"
 		exit
@@ -147,12 +156,14 @@ function tailLog(){
 #		len=`echo ${tailSup}|wc -L`
 #		echo $len
 		info_echo "发布完成！共更新${countinital}个文件"
+		rm -rf /release/$jarname
 		exit
 	else
-		tail -f /usr/local/tomcat7.0_${1}/logs/catalina.out
+		rm -rf /release/$jarname
+		tail -f $tomcat_dir/logs/catalina.out
 	fi
 }
-function main() {
+function mycase() {
 	set_variables $1 $2
 	checkjar_file 
 	backjar       $1
@@ -166,4 +177,23 @@ function main() {
 	tailLog  $1
 }
 
+function main(){
+        #$1 项目名
+        case $1 in
+        lottery)    		       mycase $1       $2      ;;
+        sso)           		       mycase $1       $2      ;;
+        peak)           	       mycase $1       $2      ;;
+        lottery-admin)   	       mycase $1       $2      ;;
+        sobet)       		       mycase $1       $2      ;;
+        lottery-report-server)         mycase $1       $2      ;;
+        admin)        		       mycase $1       $2      ;;
+        sport)         		       mycase $1       $2      ;;
+        sporttask) 		       mycase $1       $2      ;;
+        query-center) 		       mycase $1       $2      ;;
+
+        *)      info_echo "请输入项目名: $0 \$1=[lottery|sso|peak|lottery-admin|sobet|lottery-report-server|admin|sport|sporttask|query-center] \$2=[Jar包文件名]"         ;;
+        esac
+        exit 0
+}
 main $1 $2
+
